@@ -23,8 +23,8 @@ phases:
   post_build:
     commands:
       - echo "=== Build completed at $(date) ==="
-      - cp appspec.yml frontend/dist/
-      - cp -r scripts/ frontend/dist/
+      # - cp appspec.yml frontend/dist/
+      # - cp -r scripts/ frontend/dist/
 
 artifacts:
   files:
