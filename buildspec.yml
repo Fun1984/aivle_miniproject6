@@ -1,17 +1,10 @@
 version: 0.2
 
-env:
-  variables:
-    # EC2 배포 시 nginx가 바라볼 프론트엔드 경로
-    FRONTEND_DIST: frontend/dist
-    # Spring Boot JAR 출력 경로
-    BACKEND_BUILD: backend/build/libs
-
 phases:
   install:
     runtime-versions:
       nodejs: 20
-      java: corretto17        # Amazon Corretto 17 (Java 17)
+      java: corretto17
     commands:
       - echo "=== Installing frontend dependencies ==="
       - npm install --prefix frontend
@@ -32,30 +25,27 @@ phases:
 
       # ── Backend (Spring Boot / Gradle) ────────────────────
       - echo "=== Building Spring Boot app ==="
-      - cd backend
-      - chmod +x gradlew
-      - ./gradlew bootJar -x test   # 테스트 생략, 실행 가능 JAR 생성
-      - cd ..
+      - cd backend && chmod +x gradlew && ./gradlew bootJar -x test && cd ..
 
   post_build:
     commands:
       - echo "=== Build completed at $(date) ==="
-      # appspec.yml / scripts 를 아티팩트 루트에 복사 (CodeDeploy 필요)
-      - cp appspec.yml .
-      - cp -r scripts/ .
+      - echo "=== Artifact summary ==="
+      - ls frontend/dist/
+      - ls backend/build/libs/
 
 artifacts:
   files:
-    # ── Frontend 정적 파일 ──────────────────────────────────
+    # Frontend 정적 파일
     - frontend/dist/**/*
-    # ── Backend JAR ─────────────────────────────────────────
+    # Backend 실행 JAR
     - backend/build/libs/*.jar
-    # ── CodeDeploy 설정 ──────────────────────────────────────
+    # CodeDeploy 설정 (레포에 존재할 경우에만 포함됨)
     - appspec.yml
     - scripts/**/*
-  discard-paths: no   # 경로 구조를 유지해야 EC2 배포 스크립트가 경로를 찾을 수 있음
+  discard-paths: no
 
 cache:
   paths:
     - frontend/node_modules/**/*
-    - /root/.gradle/caches/**/*   # Gradle 의존성 캐시
+    - /root/.gradle/caches/**/*
