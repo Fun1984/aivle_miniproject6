@@ -1,13 +1,5 @@
 version: 0.2
 
-env:
-  variables:
-    AWS_REGION: ap-northeast-2
-    ECR_URI: <AWSNUM>.dkr.ecr.ap-northeast-2.amazonaws.com
-    ACCOUNT: <your-account-prefix>
-    EKS_CLUSTER: <ACCOUNT>-cluster
-    NAMESPACE: bookapp
-
 phases:
   install:
     runtime-versions:
@@ -24,21 +16,17 @@ phases:
 
   build:
     commands:
-      # Frontend 이미지 빌드
       - docker build -t $FRONTEND_URI ./frontend
-      # Backend 이미지 빌드
       - docker build -t $BACKEND_URI ./backend
 
   post_build:
     commands:
-      # ECR Push
       - docker push $FRONTEND_URI
       - docker push $BACKEND_URI
-      # EKS 배포
-      - aws eks update-kubeconfig --region $AWS_REGION --name $EKS_CLUSTER
-      - kubectl set image deployment/frontend-deploy
-          frontend=$FRONTEND_URI -n $NAMESPACE
-      - kubectl set image deployment/backend-deploy
-          backend=$BACKEND_URI -n $NAMESPACE
-      - kubectl rollout status deployment/frontend-deploy -n $NAMESPACE
-      - kubectl rollout status deployment/backend-deploy -n $NAMESPACE
+      # 매니페스트에 실제 이미지 태그 주입
+      - sed -i "s|IMAGE_TAG_PLACEHOLDER|$IMAGE_TAG|g" k8s/frontend-deployment.yaml
+      - sed -i "s|IMAGE_TAG_PLACEHOLDER|$IMAGE_TAG|g" k8s/backend-deployment.yaml
+
+artifacts:
+  files:
+    - k8s/**/*   # Deploy 스테이지가 이 파일을 받아서 kubectl apply
