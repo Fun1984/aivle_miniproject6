@@ -5,9 +5,9 @@ phases:
     runtime-versions:
       nodejs: 20
     commands:
-      # ECR_URI → ECR_REGISTRY (도메인만) 로 변경 ####
-      - aws ecr get-login-password --region $AWS_REGION |
-          docker login --username AWS --password-stdin $ECR_URI
+      # ECR_URI에서 도메인 부분만 추출
+      - ECR_REGISTRY=$(echo $ECR_URI | cut -d'/' -f1)
+      - aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR_REGISTRY
 
   pre_build:
     commands:
