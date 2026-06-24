@@ -5,14 +5,15 @@ phases:
     runtime-versions:
       nodejs: 20
     commands:
+      # ECR_URI → ECR_REGISTRY (도메인만) 로 변경
       - aws ecr get-login-password --region $AWS_REGION |
-          docker login --username AWS --password-stdin $ECR_URI
+          docker login --username AWS --password-stdin $ECR_REGISTRY
 
   pre_build:
     commands:
       - IMAGE_TAG=$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | cut -c1-7)
-      - FRONTEND_URI=$ECR_URI/$ACCOUNT-frontend:$IMAGE_TAG
-      - BACKEND_URI=$ECR_URI/$ACCOUNT-backend:$IMAGE_TAG
+      - FRONTEND_URI=$ECR_REGISTRY/$ACCOUNT-frontend:$IMAGE_TAG
+      - BACKEND_URI=$ECR_REGISTRY/$ACCOUNT-backend:$IMAGE_TAG
 
   build:
     commands:
@@ -23,10 +24,9 @@ phases:
     commands:
       - docker push $FRONTEND_URI
       - docker push $BACKEND_URI
-      # 매니페스트에 실제 이미지 태그 주입
       - sed -i "s|IMAGE_TAG_PLACEHOLDER|$IMAGE_TAG|g" k8s/frontend-deployment.yaml
       - sed -i "s|IMAGE_TAG_PLACEHOLDER|$IMAGE_TAG|g" k8s/backend-deployment.yaml
 
 artifacts:
   files:
-    - k8s/**/*   # Deploy 스테이지가 이 파일을 받아서 kubectl apply_2
+    - k8s/**/*
