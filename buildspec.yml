@@ -4,7 +4,7 @@ phases:
   install:
     runtime-versions:
       nodejs: 20
-    commands:
+    commands: ##
       - ECR_REGISTRY=$(echo $ECR_URI | cut -d'/' -f1)
       - echo "export ECR_REGISTRY=$ECR_REGISTRY" >> /tmp/env_vars.sh
       - aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $ECR_REGISTRY
