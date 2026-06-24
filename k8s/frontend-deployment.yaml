@@ -24,3 +24,10 @@ spec:
         image: 416225317325.dkr.ecr.us-east-1.amazonaws.com/user08-ap-frontend:IMAGE_TAG_PLACEHOLDER
         ports:
         - containerPort: 80
+      resources:
+        requests:
+          cpu: 100m
+          memory: 128Mi
+        limits:
+          cpu: 300m
+          memory: 256Mi
