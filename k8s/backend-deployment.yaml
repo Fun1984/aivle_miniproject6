@@ -1,0 +1,30 @@
+# k8s/backend-deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend-deploy
+  namespace: bookapp
+spec:
+  replicas: 1          # H2 파일 DB는 단일 Pod
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app: backend
+  template:
+    spec:
+      containers:
+      - name: backend
+        image: <ECR_URI>/$ACCOUNT-backend:latest
+        ports:
+        - containerPort: 8080
+        volumeMounts:
+        - name: h2-data
+          mountPath: /data       # application.yaml의 경로와 일치
+      volumes:
+      - name: h2-data
+        persistentVolumeClaim:
+          claimName: backend-ebs-pvc

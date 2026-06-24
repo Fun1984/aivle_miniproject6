@@ -1,51 +1,44 @@
 version: 0.2
 
+env:
+  variables:
+    AWS_REGION: ap-northeast-2
+    ECR_URI: <AWSNUM>.dkr.ecr.ap-northeast-2.amazonaws.com
+    ACCOUNT: <your-account-prefix>
+    EKS_CLUSTER: <ACCOUNT>-cluster
+    NAMESPACE: bookapp
+
 phases:
   install:
     runtime-versions:
       nodejs: 20
-      java: corretto17
     commands:
-      - echo "=== Installing frontend dependencies ==="
-      - npm install --prefix frontend
+      - aws ecr get-login-password --region $AWS_REGION |
+          docker login --username AWS --password-stdin $ECR_URI
 
   pre_build:
     commands:
-      - echo "=== Pre-build checks ==="
-      - node --version
-      - npm --version
-      - java -version
-      - echo "Build started at $(date)"
+      - IMAGE_TAG=$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | cut -c1-7)
+      - FRONTEND_URI=$ECR_URI/$ACCOUNT-frontend:$IMAGE_TAG
+      - BACKEND_URI=$ECR_URI/$ACCOUNT-backend:$IMAGE_TAG
 
   build:
     commands:
-      # ── Frontend (React/Vite) ──────────────────────────────
-      - echo "=== Building React/Vite app ==="
-      - npm run build --prefix frontend
-
-      # ── Backend (Spring Boot / Gradle) ────────────────────
-      - echo "=== Building Spring Boot app ==="
-      - cd backend && chmod +x gradlew && ./gradlew bootJar -x test && cd ..
+      # Frontend 이미지 빌드
+      - docker build -t $FRONTEND_URI ./frontend
+      # Backend 이미지 빌드
+      - docker build -t $BACKEND_URI ./backend
 
   post_build:
     commands:
-      - echo "=== Build completed at $(date) ==="
-      - echo "=== Artifact summary ==="
-      - ls frontend/dist/
-      - ls backend/build/libs/
-
-artifacts:
-  files:
-    # Frontend 정적 파일
-    - frontend/dist/**/*
-    # Backend 실행 JAR
-    - backend/build/libs/*.jar
-    # CodeDeploy 설정 (레포에 존재할 경우에만 포함됨)
-    - appspec.yml
-    - scripts/**/*
-  discard-paths: no
-
-cache:
-  paths:
-    - frontend/node_modules/**/*
-    - /root/.gradle/caches/**/*
+      # ECR Push
+      - docker push $FRONTEND_URI
+      - docker push $BACKEND_URI
+      # EKS 배포
+      - aws eks update-kubeconfig --region $AWS_REGION --name $EKS_CLUSTER
+      - kubectl set image deployment/frontend-deploy
+          frontend=$FRONTEND_URI -n $NAMESPACE
+      - kubectl set image deployment/backend-deploy
+          backend=$BACKEND_URI -n $NAMESPACE
+      - kubectl rollout status deployment/frontend-deploy -n $NAMESPACE
+      - kubectl rollout status deployment/backend-deploy -n $NAMESPACE
