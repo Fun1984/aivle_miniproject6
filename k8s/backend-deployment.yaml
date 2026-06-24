@@ -5,7 +5,7 @@ metadata:
   name: backend-deploy
   namespace: bookapp
 spec:
-  replicas: 1          # H2 파일 DB는 단일 Pod
+  replicas: 1
   strategy:
     type: RollingUpdate
     rollingUpdate:
@@ -15,15 +15,18 @@ spec:
     matchLabels:
       app: backend
   template:
+    metadata:
+      labels:
+        app: backend
     spec:
       containers:
       - name: backend
-        image: <ECR_URI>/$ACCOUNT-backend:latest
+        image: 416225317325.dkr.ecr.us-east-1.amazonaws.com/user08-ap-backend:IMAGE_TAG_PLACEHOLDER
         ports:
         - containerPort: 8080
         volumeMounts:
         - name: h2-data
-          mountPath: /data       # application.yaml의 경로와 일치##
+          mountPath: /data
       volumes:
       - name: h2-data
         persistentVolumeClaim:

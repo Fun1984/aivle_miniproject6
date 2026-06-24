@@ -15,9 +15,12 @@ spec:
     matchLabels:
       app: frontend
   template:
+    metadata:
+      labels:
+        app: frontend
     spec:
       containers:
       - name: frontend
-        image: <ECR_URI>/$ACCOUNT-frontend:latest
+        image: 416225317325.dkr.ecr.us-east-1.amazonaws.com/user08-ap-frontend:IMAGE_TAG_PLACEHOLDER
         ports:
         - containerPort: 80
