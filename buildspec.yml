@@ -5,23 +5,29 @@ phases:
     runtime-versions:
       nodejs: 20
     commands:
-      # ECR_URI에서 도메인 부분만 추출
       - ECR_REGISTRY=$(echo $ECR_URI | cut -d'/' -f1)
-      - aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR_REGISTRY
+      - echo "export ECR_REGISTRY=$ECR_REGISTRY" >> /tmp/env_vars.sh
+      - aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $ECR_REGISTRY
 
   pre_build:
     commands:
+      - source /tmp/env_vars.sh
       - IMAGE_TAG=$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | cut -c1-7)
+      - echo "export IMAGE_TAG=$IMAGE_TAG" >> /tmp/env_vars.sh
       - FRONTEND_URI=$ECR_REGISTRY/$ACCOUNT-frontend:$IMAGE_TAG
       - BACKEND_URI=$ECR_REGISTRY/$ACCOUNT-backend:$IMAGE_TAG
+      - echo "export FRONTEND_URI=$FRONTEND_URI" >> /tmp/env_vars.sh
+      - echo "export BACKEND_URI=$BACKEND_URI" >> /tmp/env_vars.sh
 
   build:
     commands:
+      - source /tmp/env_vars.sh
       - docker build -t $FRONTEND_URI ./frontend
       - docker build -t $BACKEND_URI ./backend
 
   post_build:
     commands:
+      - source /tmp/env_vars.sh
       - docker push $FRONTEND_URI
       - docker push $BACKEND_URI
       - sed -i "s|IMAGE_TAG_PLACEHOLDER|$IMAGE_TAG|g" k8s/frontend-deployment.yaml
