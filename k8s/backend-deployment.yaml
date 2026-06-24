@@ -3,7 +3,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: backend-deploy
-  namespace: bookapp
+  namespace: myapp
 spec:
   replicas: 1
   strategy:
