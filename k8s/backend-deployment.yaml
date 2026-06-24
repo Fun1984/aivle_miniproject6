@@ -30,4 +30,4 @@ spec:
       volumes:
       - name: h2-data
         persistentVolumeClaim:
-          claimName: backend-ebs-pvc
+          claimName: ebs-pvc
