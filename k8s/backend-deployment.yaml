@@ -23,7 +23,7 @@ spec:
         - containerPort: 8080
         volumeMounts:
         - name: h2-data
-          mountPath: /data       # application.yaml의 경로와 일치
+          mountPath: /data       # application.yaml의 경로와 일치##
       volumes:
       - name: h2-data
         persistentVolumeClaim:
