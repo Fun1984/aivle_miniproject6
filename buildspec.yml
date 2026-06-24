@@ -29,4 +29,4 @@ phases:
 
 artifacts:
   files:
-    - k8s/**/*   # Deploy 스테이지가 이 파일을 받아서 kubectl apply
+    - k8s/**/*   # Deploy 스테이지가 이 파일을 받아서 kubectl apply_2
