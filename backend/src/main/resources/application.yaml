@@ -33,5 +33,5 @@ jwt:
 
 aws:
   s3:
-    bucket: ${AWS_S3_BUCKET:}
-    region: ${AWS_REGION:ap-northeast-2}
+    bucket: ${AWS_S3_BUCKET:user08-storage}
+    region: ${AWS_REGION:us-east-1}

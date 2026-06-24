@@ -1,11 +1,19 @@
 version: 0.2
 
+env:
+  variables:
+    # EC2 배포 시 nginx가 바라볼 프론트엔드 경로
+    FRONTEND_DIST: frontend/dist
+    # Spring Boot JAR 출력 경로
+    BACKEND_BUILD: backend/build/libs
+
 phases:
   install:
     runtime-versions:
       nodejs: 20
+      java: corretto17        # Amazon Corretto 17 (Java 17)
     commands:
-      - echo "=== Installing dependencies ==="
+      - echo "=== Installing frontend dependencies ==="
       - npm install --prefix frontend
 
   pre_build:
@@ -13,25 +21,41 @@ phases:
       - echo "=== Pre-build checks ==="
       - node --version
       - npm --version
+      - java -version
       - echo "Build started at $(date)"
 
   build:
     commands:
+      # ── Frontend (React/Vite) ──────────────────────────────
       - echo "=== Building React/Vite app ==="
       - npm run build --prefix frontend
+
+      # ── Backend (Spring Boot / Gradle) ────────────────────
+      - echo "=== Building Spring Boot app ==="
+      - cd backend
+      - chmod +x gradlew
+      - ./gradlew bootJar -x test   # 테스트 생략, 실행 가능 JAR 생성
+      - cd ..
 
   post_build:
     commands:
       - echo "=== Build completed at $(date) ==="
-      # - cp appspec.yml frontend/dist/
-      # - cp -r scripts/ frontend/dist/
+      # appspec.yml / scripts 를 아티팩트 루트에 복사 (CodeDeploy 필요)
+      - cp appspec.yml .
+      - cp -r scripts/ .
 
 artifacts:
   files:
-    - "**/*"
-  base-directory: frontend/dist
-  discard-paths: no
+    # ── Frontend 정적 파일 ──────────────────────────────────
+    - frontend/dist/**/*
+    # ── Backend JAR ─────────────────────────────────────────
+    - backend/build/libs/*.jar
+    # ── CodeDeploy 설정 ──────────────────────────────────────
+    - appspec.yml
+    - scripts/**/*
+  discard-paths: no   # 경로 구조를 유지해야 EC2 배포 스크립트가 경로를 찾을 수 있음
 
 cache:
   paths:
     - frontend/node_modules/**/*
+    - /root/.gradle/caches/**/*   # Gradle 의존성 캐시
